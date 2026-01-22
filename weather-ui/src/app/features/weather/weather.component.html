@@ -1,0 +1,149 @@
+<div class="weather-container">
+  <header class="header">
+    <h1>Weather Dashboard</h1>
+    <p class="subtitle">Historical Weather Data for Dallas, TX</p>
+  </header>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading weather data...</p>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-container">
+    <div class="error-message">
+      <h3>⚠️ Error Loading Data</h3>
+      <p>{{ error }}</p>
+      <button (click)="retry()" class="retry-button">Retry</button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error" class="content">
+    <div class="filters">
+      <label>
+        Filter by Minimum Temperature (°C):
+        <input 
+          type="number" 
+          (input)="filterByMinTemp($event)"
+          placeholder="e.g., 20"
+          class="filter-input"
+        />
+      </label>
+      <span class="filter-info">
+        Showing {{ filteredData.length }} of {{ weatherData.length }} results
+      </span>
+    </div>
+
+    <div class="table-container">
+      <table class="weather-table">
+        <thead>
+          <tr>
+            <th (click)="sortBy('date')" class="sortable">
+              Date {{ getSortIcon('date') }}
+            </th>
+            <th (click)="sortBy('minTemp')" class="sortable">
+              Min Temp (°C) {{ getSortIcon('minTemp') }}
+            </th>
+            <th (click)="sortBy('maxTemp')" class="sortable">
+              Max Temp (°C) {{ getSortIcon('maxTemp') }}
+            </th>
+            <th (click)="sortBy('precipitation')" class="sortable">
+              Precipitation (mm) {{ getSortIcon('precipitation') }}
+            </th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            *ngFor="let weather of filteredData" 
+            [class.error-row]="weather.status !== 'Success'"
+            (click)="selectWeather(weather)"
+            class="data-row"
+          >
+            <td>{{ weather.date }}</td>
+            <td>
+              <span *ngIf="weather.minTemp !== null">{{ weather.minTemp | number:'1.1-1' }}</span>
+              <span *ngIf="weather.minTemp === null" class="no-data">N/A</span>
+            </td>
+            <td>
+              <span *ngIf="weather.maxTemp !== null">{{ weather.maxTemp | number:'1.1-1' }}</span>
+              <span *ngIf="weather.maxTemp === null" class="no-data">N/A</span>
+            </td>
+            <td>
+              <span *ngIf="weather.precipitation !== null">{{ weather.precipitation | number:'1.1-1' }}</span>
+              <span *ngIf="weather.precipitation === null" class="no-data">N/A</span>
+            </td>
+            <td>
+              <span 
+                class="status-badge" 
+                [class.status-success]="weather.status === 'Success'"
+                [class.status-error]="weather.status !== 'Success'"
+              >
+                {{ weather.status }}
+              </span>
+            </td>
+            <td>
+              <button (click)="selectWeather(weather); $event.stopPropagation()" class="details-button">
+                View Details
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredData.length === 0">
+            <td colspan="6" class="no-results">
+              No weather data matches your filter criteria
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="selectedWeather" class="modal-overlay" (click)="closeDetails()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Weather Details</h2>
+        <button (click)="closeDetails()" class="close-button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-row">
+          <span class="detail-label">Date:</span>
+          <span class="detail-value">{{ selectedWeather.date }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status:</span>
+          <span 
+            class="status-badge" 
+            [class.status-success]="selectedWeather.status === 'Success'"
+            [class.status-error]="selectedWeather.status !== 'Success'"
+          >
+            {{ selectedWeather.status }}
+          </span>
+        </div>
+        <div *ngIf="selectedWeather.status === 'Success'" class="weather-details">
+          <div class="detail-row">
+            <span class="detail-label">Minimum Temperature:</span>
+            <span class="detail-value">{{ selectedWeather.minTemp }}°C</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Maximum Temperature:</span>
+            <span class="detail-value">{{ selectedWeather.maxTemp }}°C</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Precipitation:</span>
+            <span class="detail-value">{{ selectedWeather.precipitation }} mm</span>
+          </div>
+          <div *ngIf="selectedWeather.maxTemp && selectedWeather.minTemp" class="detail-row">
+            <span class="detail-label">Temperature Range:</span>
+            <span class="detail-value">
+              {{ (selectedWeather.maxTemp - selectedWeather.minTemp) | number:'1.1-1' }}°C
+            </span>
+          </div>
+        </div>
+        <div *ngIf="selectedWeather.errorMessage" class="error-detail">
+          <span class="detail-label">Error:</span>
+          <span class="detail-value error-text">{{ selectedWeather.errorMessage }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
